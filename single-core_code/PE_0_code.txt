@@ -1,11 +1,11 @@
-'LOAD', 't1', 'x'
-'ADD', 't2', 't1', '4'
-'MUL', 't3', 't1', '8'
+LOAD, t1, x
+ADD, t2, t1, 4
+MUL, t3, t1, 8
 
 
 
-'SUB', 't4', 't1', '4'
-'DIV', 't5', 't1', '2'
+SUB, t4, t1, 4
+DIV, t5, t1, 2
 
 
 
@@ -13,13 +13,18 @@
 
 
 
-'MUL', 't6', 't2', 't3'
+MUL, t6, t2, t3
 
 
 
-'SUB', 't7', 't4', 't5'
-'MUL', 't8', 't6', 't7'
+SUB, t7, t4, t5
+MUL, t8, t6, t7
 
 
 
-'STORE', 'y', 't8'
+MUL, t9, t5, t2
+
+
+
+STORE, y, t8
+STORE, z, t9

@@ -1,5 +1,5 @@
 NOP
-'DIV', 't5', 't1', '2'
+DIV, t5, t1, 2
 
 
 
@@ -8,8 +8,8 @@ NOP
 
 
 NOP
-'MUL', 't8', 't6', 't7'
+MUL, t8, t6, t7
 
 
 
-NOP
+STORE, z, t9
