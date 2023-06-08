@@ -3,6 +3,7 @@
     "SUB":1,
     "MUL":4,
     "DIV":8,
+    "SQRT":10,
     "LOAD":1,
     "STORE":1
 }

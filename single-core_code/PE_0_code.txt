@@ -26,5 +26,15 @@ MUL, t9, t5, t2
 
 
 
+SQRT, t10, t9
+
+
+
+
+
+
+
+
+
 STORE, y, t8
-STORE, z, t9
+STORE, z, t10
