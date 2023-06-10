@@ -1,16 +1,16 @@
-LOAD, t1, x
-ADD, t2, t1, t1
-SUB, t1, t1, 4
 NOP
 NOP
 NOP
-NOP
-NOP
-NOP
-NOP
-NOP
-MUL, t1, t2, t1
+DIV, t2, t1, t2
+
+
+
+
 
 
 
 STORE, z, t2
+NOP
+NOP
+NOP
+NOP

@@ -1,16 +1,16 @@
 NOP
-NOP
-NOP
-DIV, t2, t1, t2
-
-
-
-
-
-
-
+ADD, t2, t1, t1
 NOP
 NOP
 NOP
 NOP
-STORE, y, t1
+NOP
+NOP
+NOP
+NOP
+NOP
+MUL, t1, t2, t1
+
+
+
+NOP
