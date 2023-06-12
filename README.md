@@ -3,11 +3,16 @@
 
 ## How to Run
 
-Run the command 
-'''
+Run the following command to execute code.
+```
 python3 execute.py [source code file name] [memory file name] [core count]
-'''
-to execute code.
+```
+
+For example, to execute the code in "code.txt" with memory values in "mem.txt" and a core count of 3. Run....
+```
+python3 execute.py code.txt mem.txt 3
+```
+Executable text files are found and have to be in the 'input/' folder.
 
 ### Operation Handled
 |Operation Name| Instruction | IR | Description |
