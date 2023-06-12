@@ -14,7 +14,7 @@ python3 execute.py code.txt mem.txt 3
 ```
 Executable text files are found and have to be in the 'input/' folder.
 
-### Operations Handled
+### Operation Handled
 |Operation Name| Instruction | IR | Description |
 |----------|----------|--------------------------|----------|
 |Load|t1=LOAD(x);|('LOAD','t1','x',()) |Loads value from memory address 'x' into register 't1'.|
@@ -31,10 +31,38 @@ Executable text files are found and have to be in the 'input/' folder.
 
 
 
+The Main Code Loop involves 3 Classes: ```Parser()```, ```CodeGen()```, and ```Simulator()```.
+```
+Main Code Loop
+1. Takes input code, memory, core count.
+2. Generates DFG and IR from Parser() Class.
+3. The CodeGen() Class then uses the IR to distributes instrutions amongst PEs and generates a multi-core and a single-core compiled code. 
+4. The Simulator() Class then simulates the cycle-by-cycle insutrction execution for both compiled codes and tests to see if the outputs are correct.
+```
+
+
 
 ### Parser Class
 
+Takes code from 'input/' folder and generates an optimized IR. 
 
+Optimization includes dead code removal, constant folding, and constant propagation. 
+
+Main IR creation function ```parse()``` from parser class executes
+```
+Parser().parse()
+1. Generate Instruction Set from input code
+2. Tokenized Instruction Set
+3. Generate Partial IR from instruction set
+4. Generate IR with Dependencies from Partial IR
+5. Remove dead code and generate new Partial IR
+6. Regenerate IR with Dependencies from Partial IR
+7. While constant_folding is True
+   1. Apply Constant Folding
+   2. Apply Constant Propagation
+   3. Regenerate IR with Dependencies from Partial IR
+8. Generate Data Flow Graph and IR
+```
 
 ### CodeGen Class
 
