@@ -12,6 +12,22 @@ def is_number(string):
     except ValueError:
         return False
 
+def load_mem(file_name):
+    with open(file_name, "r") as handler:
+        contents = handler.readlines()
+    
+    mem_output = []
+    for instruction in contents:
+        to_mem = instruction.strip().replace(" ","").split("=")
+        if len(to_mem) != 2:
+            raise(ValueError(f"Error! '{instruction}' is not a valid memory address and value pair. \n Example: 'z = 30' stores 30 in memory address 'z'."))
+        elif not is_number(to_mem[1]):
+            raise(ValueError(f"Error! value'{to_mem[1]}' is not a float or int!"))
+   
+        to_mem[1] = float(to_mem[1])
+        mem_output.append(to_mem)
+    return mem_output
+
 class Parser():
     def __init__(self) -> None:
         self.operators = ["*","/","+","-","^"]
@@ -266,7 +282,6 @@ class Parser():
         constant_folding_bool = True
         while(constant_folding_bool):
             #Constant Folding
-            print(IR)
             IR = self._constant_folding(IR)
             
             #Constant Propogation
@@ -274,8 +289,7 @@ class Parser():
 
             #Regenerate New IR with update instruction list
             IR, writes, depend, edges, write_depend = self._gen_dependencies(IR_partial)
-            print(IR)
-            print()
+
 
         instructions = self._IR_to_instruction(IR)
 
@@ -474,7 +488,6 @@ class Simulator():
             with open(self.file_path+file_name) as f:
                 data = f.read()
             code.append([[j.replace(" ",'') for j in i.split(",")]for i in data.split("\n") if i])
-        print(code)
         return code
 
     def run(self):
@@ -549,3 +562,4 @@ class Simulator():
             raise(ValueError(f'Unknown Instruction: {instruction}'))
         
 
+#print(load_mem("mem.txt"))
