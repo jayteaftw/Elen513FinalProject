@@ -1,6 +1,6 @@
 from lib import *
 import sys
-import os
+
 
 # Accessing command-line arguments
 arguments = sys.argv
@@ -41,8 +41,8 @@ print('"""')
 print("\n\n\n")
 
 #Intialize Code Generator Class
-single_core_code_gen = CodeGen(1,path="single_core_code/")
-multi_core_code_gen = CodeGen(multi_core_count,path="multi_core_code/")
+single_core_code_gen = CodeGen(1,path=single_core_code_path)
+multi_core_code_gen = CodeGen(multi_core_count,path=multi_core_code_path)
 
 #Run Code Gen
 print("Running Single Core Code Generation")
@@ -53,8 +53,8 @@ multi_core_code_gen.generate_backend_code(IR)
 print("\n\n\n")
 
 #Intialize 
-single_core_simulator = Simulator(1,'single_core_code/')
-multi_core_simulator = Simulator(multi_core_count,'multi_core_code/')
+single_core_simulator = Simulator(1,single_core_code_path)
+multi_core_simulator = Simulator(multi_core_count,multi_core_code_path)
 
 
 #Running Simulations

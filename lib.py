@@ -4,9 +4,19 @@ from time import sleep
 import math
 import copy
 import json
+import os
 
 input_folder = "input/"
 output_folder = "output/"
+single_core_code_path="single_core_code/"
+multi_core_code_path="multi_core_code/"
+
+for folder_path in [input_folder,output_folder,single_core_code_path,multi_core_code_path]:
+    if not (os.path.exists(folder_path) and os.path.isdir(folder_path)):
+        print(f"Folder '{folder_path}' does not exist!")
+        os.makedirs(folder_path)
+print("\n\n")
+
 
 def is_number(string):
     try:
