@@ -1,5 +1,6 @@
 from lib import *
 import sys
+import os
 
 # Accessing command-line arguments
 arguments = sys.argv
@@ -13,9 +14,18 @@ memory_file_name = arguments[2]
 multi_core_count= arguments[3]
 
 if not multi_core_count.isdigit():
-    raise(ValueError(f"Need 3 Arguments: '[source code file name] [memory file name] [core count]', Core Count is not a digit!"))
+    raise(ValueError(f"Core Count is not a digit! Got '{multi_core_count}' instead?"))
 else:
     multi_core_count= int(arguments[3])
+
+
+if not os.path.isfile(input_folder+source_code_file_name):
+    raise(ValueError(f"'{source_code_file_name}' does not exist in folder 'input'"))
+if not os.path.isfile(input_folder+memory_file_name):
+    raise(ValueError(f"'{memory_file_name}' does not exist in folder 'input'"))
+
+source_code_file_name = input_folder+arguments[1]
+memory_file_name = input_folder+arguments[2]
 
 with open(source_code_file_name, "r") as handler:
     content = handler.read()

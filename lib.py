@@ -5,6 +5,9 @@ import math
 import copy
 import json
 
+input_folder = "input/"
+output_folder = "output/"
+
 def is_number(string):
     try:
         float(string)
@@ -251,9 +254,11 @@ class Parser():
             self.dot.edge(str(x),str(y))
             file_contents += f"{x}->{y}\n"
         
-        with open("DFG.output", "w") as f:
+        with open(output_folder+"DFG.output", "w") as f:
             f.write(file_contents)
-    
+
+        self.dot.render(output_folder+'DFG_image',format='svg')
+
     def parse(self,code):
     
         instructions = [instr.strip("\n") for instr in code.split(";")[:-1]]
@@ -302,7 +307,7 @@ class CodeGen():
     def __init__(self,num_PEs,path="/") -> None:
         self.file_path = path
         self.num_PEs = num_PEs
-        with open('operation_latency.json', 'r') as f:
+        with open(input_folder+'operation_latency.json', 'r') as f:
             self.cycle_times = json.load(f)
     
     def generate_backend_code(self,IR):
@@ -477,7 +482,7 @@ class Simulator():
         self.RG = {}
         self.pe_count = pes
         self.file_path = file_path
-        with open('operation_latency.json', 'r') as f:
+        with open(input_folder+'operation_latency.json', 'r') as f:
             self.cycle_times = json.load(f)
         self.cycle_times['NOP'] = 1
     

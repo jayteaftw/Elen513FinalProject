@@ -4,3 +4,5 @@ single_core_code/*
 DFG.output
 __pycache__
 DFG.output
+output/*
+
