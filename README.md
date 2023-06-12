@@ -14,7 +14,7 @@ python3 execute.py code.txt mem.txt 3
 ```
 Executable text files are found and have to be in the 'input/' folder.
 
-### Operation Handled
+### Operations Handled
 |Operation Name| Instruction | IR | Description |
 |----------|----------|--------------------------|----------|
 |Load|t1=LOAD(x);|('LOAD','t1','x',()) |Loads value from memory address 'x' into register 't1'.|
