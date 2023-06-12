@@ -18,7 +18,7 @@ to execute code.
 |Subtract|t4=t1-4;|('SUB', 't4', 't1', '4', (0,))|Subtracts value in register t1 with 4 and stores it in register t4. Line 0 must be excuted first|
 |Multiply|t9=t5*t2;|('MUL', 't9', 't5', 't2', (1, 4))|Multiplies value in register t9 with value in register t2 and stores it in register t9. Line 1 and 4 must be excuted first.|
 |Divide|t5=t1/2;|('DIV', 't5', 't1', '2', (0,)),|Divides value in register t1 with 2 and stores it in register t5. Line 0 must be excuted first.|
-|Square Root|t10= ^ t9;| ('SQRT', 't10', 't9', (8,))|Takes the square root of value in register t9 and stores it in register t10. Line 8 must be excuted first.|
+|Square Root|t10=^t9;| ('SQRT', 't10', 't9', (8,))|Takes the square root of value in register t9 and stores it in register t10. Line 8 must be excuted first.|
 
 
 
