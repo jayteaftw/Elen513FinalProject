@@ -320,7 +320,7 @@ class CodeGen():
         with open(input_folder+'operation_latency.json', 'r') as f:
             self.cycle_times = json.load(f)
     
-    def generate_backend_code(self,IR):
+    def generate_compiled_code(self,IR):
         # Step 2: Receive IR, number of PEs, and cycle times
 
         # Step 3: Assign initial tasks to PEs

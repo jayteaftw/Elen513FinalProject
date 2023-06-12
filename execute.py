@@ -46,10 +46,10 @@ multi_core_code_gen = CodeGen(multi_core_count,path=multi_core_code_path)
 
 #Run Code Gen
 print("Running Single Core Code Generation")
-single_core_code_gen.generate_backend_code(IR)
+single_core_code_gen.generate_compiled_code(IR)
 print()
 print("Running Multi Core Code Generation")
-multi_core_code_gen.generate_backend_code(IR)
+multi_core_code_gen.generate_compiled_code(IR)
 print("\n\n\n")
 
 #Intialize 
