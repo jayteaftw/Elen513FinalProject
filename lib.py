@@ -69,7 +69,7 @@ class Parser():
                     if cur != "":
                         tokens.append(cur)
                     if instr[pos] != " ":
-                        tokens.append(instr[pos])
+                        tokens.append(instr[pos].strip())
                     cur = ""
                 else:
                     cur += instr[pos]
@@ -140,6 +140,18 @@ class Parser():
             IR[idx] = IR[idx] +tuple((all_depend, ))
         
         return IR, writes, reads, edges, write_depend
+
+    def _remove_duplicate_code(self, IR):
+        new_partial_IR = []
+        visited = set()
+        for instruction in IR:
+            if instruction not in visited:
+                new_partial_IR.append(instruction[:len(instruction)-1])
+                visited.add(instruction)
+
+        return new_partial_IR
+
+
 
     def _dead_code_removal(self, IR, write_depend, instructions):
         
@@ -277,13 +289,18 @@ class Parser():
         #Tokenize instruction set
         tokenized_list = self._gen_tokenized_list(instructions)
 
-
         #Generates IR without dependency list
         IR_partial = self._gen_IR(tokenized_list)
         
         #Generates IR(with dependencies list)
         IR, writes, depend, edges, write_depend = self._gen_dependencies(IR_partial)
         
+       
+
+        #Remove Duplicate code
+        IR, writes, depend, edges, write_depend = self._gen_dependencies(self._remove_duplicate_code(IR))
+
+
         #Handles WAW and insutrctions that have no dependecies
         instructions, IR_partial = self._dead_code_removal(IR, write_depend, instructions)
 
@@ -321,34 +338,32 @@ class CodeGen():
             self.cycle_times = json.load(f)
     
     def generate_compiled_code(self,IR):
-        # Step 2: Receive IR, number of PEs, and cycle times
-
-        # Step 3: Assign initial tasks to PEs
+        
+        # Step 1: Assign initial tasks to PEs
         assignments = self.initial_assignment(IR)
         
-        #Step 4:
+        #Step 2:
         execution_times = self.calculate_execution_times(assignments)
 
-        # Step 5: Check workload imbalance
+        # Step 3: Check workload imbalance
         max_execution_time = max(execution_times)
         min_execution_time = min(execution_times)
         cur_imbalance = max_execution_time - min_execution_time
 
-
-      
         iteration = 0
 
+        print(f"Iteration: {iteration}\t Initial Imbalance: {cur_imbalance}")
         #Repeat 4-6
         while True:
             
-            
-            # Step 6: Task migration or swapping strategy
+            iteration += 1 
+            # Step 4: Task migration or swapping strategy
             new_assignments = self.rebalance_workload(assignments, execution_times)
 
-            # Step 4: Calculate execution cost for each PE
+            # Step 5: Calculate execution cost for each PE
             execution_times = self.calculate_execution_times(new_assignments)
 
-            # Step 5: Check workload imbalance
+            # Step 6: Check workload imbalance
             max_execution_time = max(execution_times)
             min_execution_time = min(execution_times)
             new_imbalance = max_execution_time - min_execution_time
@@ -361,7 +376,7 @@ class CodeGen():
             cur_imbalance = new_imbalance
             assignments = new_assignments
             
-            iteration += 1 
+        #Step 7
         synced_tasks = self.sync(assignments, IR)
         for pe_id, assigned_tasks in enumerate(synced_tasks):
             # Step 8: Generate output code for each PE
