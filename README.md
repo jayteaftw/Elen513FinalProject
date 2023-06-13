@@ -55,8 +55,8 @@ Parser().parse()
 2. Tokenized Instruction Set
 3. Generate Partial IR from instruction set
 4. Generate IR with Dependencies from Partial IR
-5. Remove dead code and generate new Partial IR
-6. Regenerate IR with Dependencies from Partial IR
+5. Remove Duplicate Code, and regenerate new IR
+6. Remove dead code and generate new IR
 7. While constant_folding is True
    1. Apply Constant Folding
    2. Apply Constant Propagation
