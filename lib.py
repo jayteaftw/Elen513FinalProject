@@ -541,7 +541,7 @@ class Simulator():
 
             #print(cycle,instruction_running,live_cycles,instruction_pos)
             cycle += 1
- 
+        return cycle-1 if cycle-1 > 0 else 0
     def execute(self, instruction):
         instruction_name = instruction[0]
         
