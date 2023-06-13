@@ -14,7 +14,7 @@ python3 execute.py code.txt mem.txt 3
 ```
 Executable text files are found and have to be in the 'input/' folder.
 
-### Operation Handled
+### Operation's Handled
 |Operation Name| Instruction | IR | Description |
 |----------|----------|--------------------------|----------|
 |Load|t1=LOAD(x);|('LOAD','t1','x',()) |Loads value from memory address 'x' into register 't1'.|
@@ -66,10 +66,30 @@ Parser().parse()
 
 ### CodeGen Class
 
+```
+CodeGen().generate_compiled_code()
+1. Create an initial assignment instruction to PEs
+2. Get initial execution times
+3. Check initial wordload imbalance
+4. While new imbance < Current imbalance
+    1. Rebalance workload by swaping tasks between the PE with the highest cycle count time and the PE with lowest cycle time
+    2. Calculate new execution times
+    3. Calculate new imbalance times
+5. Synchronize multi-core compiled code with NOPs so instruction excecute correctly.
+6. Generate final compiled code.
+```
+
 
 ### Simulator Class
 
 
+```
+Simulator().run()
+1. Load Compiled Code.
+2. While PEs have instructions to run
+    1. For every PE, If current instruction is finished, load next instruction and execute. 
+    2. Update cycle time.
+```
 
 
 
