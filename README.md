@@ -95,7 +95,18 @@ Simulator().run()
     2. Update cycle time.
 ```
 
-## Execute.py
+## Files and Directories
+
+### *Input/*
+    Input directory that contains code.txt, mem.txt, and operation_latency.json.
+### *Output/*
+    Output directory that contains DFG outputs, multi_core_code directory, and single_core_code directory.
+### *lib.py*
+    Source Code that contains the classes Parser(), CodeGen(), and Simulator().
+### *execute.py*
+    Main python file executing Parser(), CodeGen(), and Simulator().
+### *debug.ipynb*
+    #Notebook for debuging code.
 
 
 ## Example
@@ -148,7 +159,7 @@ z = 10
 
 
 ### Running Parser()
-After excuting ```parse()```, 
+After executing ```parse()```, 
 
 Optimized IR
 ```
