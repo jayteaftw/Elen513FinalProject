@@ -13,7 +13,7 @@ multi_core_code_path=output_folder+"multi_core_code/"
 
 for folder_path in [input_folder,output_folder,single_core_code_path,multi_core_code_path]:
     if not (os.path.exists(folder_path) and os.path.isdir(folder_path)):
-        print(f"Folder '{folder_path}' does not exist!")
+        print(f"Creating Folder '{folder_path}' as it does not exist!")
         os.makedirs(folder_path)
 print("\n\n")
 
