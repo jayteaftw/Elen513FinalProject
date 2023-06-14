@@ -11,6 +11,7 @@ output_folder = "output/"
 single_core_code_path=output_folder+"single_core_code/"
 multi_core_code_path=output_folder+"multi_core_code/"
 
+#Checks to see if required folders exist
 for folder_path in [input_folder,output_folder,single_core_code_path,multi_core_code_path]:
     if not (os.path.exists(folder_path) and os.path.isdir(folder_path)):
         print(f"Creating Folder '{folder_path}' as it does not exist!")
@@ -18,14 +19,42 @@ for folder_path in [input_folder,output_folder,single_core_code_path,multi_core_
 print("\n\n")
 
 
+#Checks if a number is a Float or Int
 def is_number(string):
+    """
+    Checks if a string represents a valid float or integer number.
+    
+    Args:
+        string (str): The string to be checked.
+
+    Returns:
+        bool: True if the string represents a float or integer, False otherwise.
+    """
     try:
         float(string)
         return True
     except ValueError:
         return False
 
+
 def load_mem(file_name):
+    """
+    Input: file_name of memory file
+    Output: list of address value pairs to be stored in memory
+
+    Reads the contents of the specified memory file and processes each line to extract address-value pairs.
+    Each line in the file should be in the format "address = value", where address is a string and value is a number.
+    Returns a list of tuples, where each tuple contains the address-value pair extracted from the file.
+
+    Raises a ValueError if a line in the file is not a valid address-value pair or if the value is not a number.
+
+    Args:
+        file_name (str): Name of the memory file.
+
+    Returns:
+        list: List of address-value pairs to be stored in memory.
+    """
+
     with open(file_name, "r") as handler:
         contents = handler.readlines()
     
@@ -42,7 +71,19 @@ def load_mem(file_name):
     return mem_output
 
 class Parser():
+    """
+    A class that parses an inputted code and generates an optimized IR.
+    """
     def __init__(self) -> None:
+        """
+        Initializes the Parser class.
+
+        - operators: List of arithmetic operators.
+        - delims: List of delimiters.
+        - symbol_to_name: Dictionary mapping operators to their corresponding names.
+        - operator_map: Dictionary mapping operator names to their corresponding symbols.
+        - dot: Graphviz Digraph object for visualizing the data flow graph.
+        """
         self.operators = ["*","/","+","-","^"]
         self.delims = [" ", "(",")","="]
         self.symbol_to_name = { "+": "ADD",
@@ -59,6 +100,16 @@ class Parser():
         self.dot = Digraph()
     
     def _gen_tokenized_list(self,instructions):
+        """
+        Generates a partial Intermediate Representation (IR) from a tokenized list.
+
+        Args:
+            tokenized_list (list): Tokenized list.
+
+        Returns:
+            list: Partial IR.
+        """
+        
         tokenized_list = []
         for instr in instructions[:]:
             tokens = []
@@ -79,7 +130,16 @@ class Parser():
             tokenized_list.append(tokens)
         return tokenized_list
 
-    def _gen_IR(self, tokenized_list):
+    def _gen_partial_IR(self, tokenized_list):
+        """
+        Generates a partial Intermediate Representation (IR) from a tokenized list.
+
+        Args:
+            tokenized_list (list): Tokenized list.
+
+        Returns:
+            list: Partial IR.
+        """
         IR = []
         for tokens in tokenized_list:
             if "LOAD" in tokens:
@@ -97,18 +157,26 @@ class Parser():
         return IR 
 
     def _gen_dependencies(self,IR):
-        writes, reads = [], []
-        write_depend, edges = [], []
-        read_depend = []
+        """
+        Generates Read-after-Write (RAW) and Write-after-read (WAR) dependencies from a partial IR.
+
+        Args:
+            IR (list): Partial IR.
+
+        Returns:
+            tuple: IR, RAW, WAR, edges, and write_depend.
+        """
+        RAW, WAR = [], []
+        write_depend, read_depend = [], [] #Pos of WAR, and RAW in list
+        edges = []
 
         for instr in IR:
             depend_tokens = []
             depend_tokens_pos = []
             #Check Read Dependicies
-            #print(instr)
             for token in  instr[2:]:
                 #print(token,instr[2:],indep)  
-                for pos, dep_token in reversed(list(enumerate(writes))):
+                for pos, dep_token in reversed(list(enumerate(RAW))):
                     if token == dep_token:
                         if token not in depend_tokens: 
                             depend_tokens.append(token)
@@ -119,16 +187,16 @@ class Parser():
             token = instr[1]
             read_tokens = []
             read_tokens_pos = []
-            for pos , tokens in  enumerate(reads):
+            for pos , tokens in  enumerate(WAR):
                 if token in tokens:
                     read_tokens.append(token)
                     read_tokens_pos.append(pos)
 
 
             read_depend.append(tuple(set(read_tokens_pos)))
-            writes.append('' if instr[1] == "STORE" else instr[1])
+            RAW.append('' if instr[1] == "STORE" else instr[1])
   
-            reads.append(depend_tokens)
+            WAR.append(depend_tokens)
             write_depend.append(tuple(set(depend_tokens_pos)))
 
         for x, ys in enumerate(write_depend):
@@ -139,9 +207,18 @@ class Parser():
             all_depend = tuple(set((write_depend[idx]+read_depend[idx])))
             IR[idx] = IR[idx] +tuple((all_depend, ))
         
-        return IR, writes, reads, edges, write_depend
+        return IR, RAW, WAR, edges, write_depend
 
     def _remove_duplicate_code(self, IR):
+        """
+        Removes duplicate code from the IR.
+
+        Args:
+            IR (list): IR.
+
+        Returns:
+            list: New partial IR without duplicate code.
+        """
         new_partial_IR = []
         visited = set()
         for instruction in IR:
@@ -152,28 +229,39 @@ class Parser():
         return new_partial_IR
 
     def _dead_code_removal(self, IR, write_depend, instructions):
-        
+        """
+        Removes dead code from the IR.
+        Dead code refers to code that is not stored in memory.
+
+        Args:
+            IR (list): IR.
+            write_depend (list): Positions of write dependencies.
+            instructions (list): List of instructions.
+
+        Returns:
+            tuple: New instructions and new partial IR.
+        """
+
+
         instructions_keep = set()
         store_instructions_pos = []
         for idx, instrc in enumerate(IR):
             if instrc[0] == "STORE":
                 store_instructions_pos.append(idx)
         
+        #Helper function to find which instructions are part 
+        #of the dependency chain to a store instruction.
         def dfs(idx):
     
             if len(write_depend[idx]) ==0 or IR[idx][0] == "LOAD":
                 instructions_keep.add(idx)
                 return True
-            
-        
             results = False
             for pos in write_depend[idx]:
                 if dfs(pos):
                     results = True or results
-
             if results:
                 instructions_keep.add(idx)
-
             return results
 
         for instrc_idx in store_instructions_pos:
@@ -188,24 +276,39 @@ class Parser():
         return new_instructions, new_IR_Partial
 
     def _constant_folding(self,IR):
+        """
+        Applies constant folding to instructions that have constants as their read registers.
+        Example: 'ADD t1, 1, 1' becomes 'EQ, t1, 2' 
+
+        Args:
+            IR (list): IR.
+
+        Returns:
+            list: New partial IR.
+        """
         for idx, instruction in enumerate(IR):
-            #print("here", instruction[0] in self.symbol_to_name)
             if instruction[0] in self.symbol_to_name.values():
-                
                 if instruction[0] == "SQRT":
                     if is_number(instruction[2]):
-                        IR[idx] = ('EQ', instruction[1], str(math.sqrt(float(instruction[2]))), instruction[3] )
-                        
+                        IR[idx] = ('EQ', instruction[1], str(math.sqrt(float(instruction[2]))), instruction[3] )   
                 else:
-                    
                     if is_number(instruction[2]) and is_number(instruction[3]):
                         result = eval(instruction[2]  +  self.operator_map[instruction[0]]  + instruction[3])
                         IR[idx] = ('EQ', instruction[1], str(result), instruction[4] )
-                        
-
         return IR 
 
     def _constant_propogation(self, IR, write_depend):
+        """
+        Applies constant propagation to instructions that read from instructions that are constant.
+        Example: 'EQ, t1, 1','ADD t1, t1, 2' becomes 'ADD t1, 1, 2'
+
+        Args:
+            IR (list): IR.
+            write_depend (list): Positions of write dependencies.
+
+        Returns:
+            tuple: New partial IR and boolean indicating if any constant folding occurred.
+        """
         bool = False
         for idx, instruction in enumerate(IR):
 
@@ -249,6 +352,15 @@ class Parser():
         return  new_partial_IR, bool
 
     def _IR_to_instruction(self, IR):
+        """
+        Converts IR to an instruction list.
+
+        Args:
+            IR (list): IR.
+
+        Returns:
+            list: Instruction list.
+        """
         instructions = []
         for instruction in IR:
             if instruction[0] == "LOAD":
@@ -265,6 +377,9 @@ class Parser():
         return instructions
 
     def _dfg(self,instructions,edges):
+        """
+        Generates a data flow graph from the inputted instruction list and edges.
+        """
         self.dot = Digraph()
         file_contents = ""
         for idx, instr in enumerate(instructions):
@@ -281,38 +396,37 @@ class Parser():
         self.dot.render(output_folder+'DFG_image',format='svg')
 
     def parse(self,code):
+        """
+        Parses the inputted code and generates the intermediate representation (IR), dependencies, write-after-read (WAR)
+        dependencies, and write dependencies.
+
+        Args:
+            code (str): Code to parse.
+
+        Returns:
+            tuple: IR, dependencies, WAR dependencies, and write dependencies.
+        """
     
         instructions = [instr.strip("\n") for instr in code.split(";")[:-1]]
-
 
         #Tokenize instruction set
         tokenized_list = self._gen_tokenized_list(instructions)
         
-        print(tokenized_list)
-
-        #Generates IR without dependency list
-        IR_partial = self._gen_IR(tokenized_list)
+        #Generates partial IR without dependency list
+        IR_partial = self._gen_partial_IR(tokenized_list)
         
         #Generates IR(with dependencies list)
         IR, writes, depend, edges, write_depend = self._gen_dependencies(IR_partial)
         
-       
-
         #Remove Duplicate code
         IR, writes, depend, edges, write_depend = self._gen_dependencies(self._remove_duplicate_code(IR))
-
-        pprint(IR)
-
 
         #Handles WAW and insutrctions that have no dependecies
         instructions, IR_partial = self._dead_code_removal(IR, write_depend, instructions)
 
-        print(IR_partial)
-
         #Regenerate New IR with update instruction list
         IR, writes, depend, edges, write_depend = self._gen_dependencies(IR_partial)
         
-
         #Constant Folding then Propgation Loop. 
         #Evaluates constant expressions and Replaces variables with constants.
         constant_folding_bool = True
@@ -335,18 +449,34 @@ class Parser():
         return IR, depend, writes, write_depend
 
 class CodeGen():
+    """
+    A class that generates compiled code for a multi-PE environment.
+    """
     def __init__(self,num_PEs,path="/") -> None:
+        """
+        Initializes the CodeGen.
+
+        Args:
+            num_PEs (int): The number of processing elements (PEs).
+            path (str, optional): The path to the input files. Defaults to "/".
+        """
         self.file_path = path
         self.num_PEs = num_PEs
         with open(input_folder+'operation_latency.json', 'r') as f:
             self.cycle_times = json.load(f)
     
     def generate_compiled_code(self,IR):
+        """
+        Generates compiled code for a given set of intermediate representation (IR) tasks.
+
+        Args:
+            IR (list): The list of intermediate representation (IR) tasks.
+        """
         
         # Step 1: Assign initial tasks to PEs
         assignments = self._initial_assignment(IR)
         
-        #Step 2:
+        #Step 2: calculates execution times for each PE
         execution_times = self._calculate_execution_times(assignments)
 
         # Step 3: Check workload imbalance
@@ -390,7 +520,15 @@ class CodeGen():
             self._dump_code_to_file(code, pe_id)
 
     def _initial_assignment(self,tasks):
-        # Assign initial tasks to PEs
+        """
+        Assigns initial tasks to PEs.
+
+        Args:
+            tasks (list): The list of tasks.
+
+        Returns:
+            list: The initial task assignments to PEs.
+        """
         
         assignments = [[] for _ in range(self.num_PEs)]
         task_index = 0
@@ -404,7 +542,15 @@ class CodeGen():
         return assignments
 
     def _calculate_execution_times(self,assignments):
-        # Calculate execution time for each PE
+        """
+        Calculates the execution time for each PE.
+
+        Args:
+            assignments (list): The task assignments to PEs.
+
+        Returns:
+            list: The execution times for each PE.
+        """
         execution_times = []
 
         for assigned_tasks in assignments:
@@ -419,10 +565,19 @@ class CodeGen():
         return execution_times
 
     def _rebalance_workload(self,assignments, execution_times):
+        """
+        Performs task migration or swapping to balance the workload.
+
+        Args:
+            assignments (list): The task assignments to PEs.
+            execution_times (list): The execution times for each PE.
+
+        Returns:
+            list: The new task assignments after workload rebalancing.
+        """
 
         new_assignments = copy.deepcopy(assignments)
         
-        # Perform task migration or swapping to balance workload
         max_index = execution_times.index(max(execution_times))
         min_index = execution_times.index(min(execution_times))
 
@@ -433,7 +588,16 @@ class CodeGen():
         return new_assignments
 
     def _sync(self,assignments, IR):
+        """
+        Synchronizes tasks across PEs.
 
+        Args:
+            assignments (list): The task assignments to PEs.
+            IR (list): The list of intermediate representation (IR) tasks.
+
+        Returns:
+            list: The synchronized tasks across PEs.
+        """
         sync_code = [[] for _ in range(len(assignments))]
         hash = {}
         instruction_cycle_times = [self.cycle_times[task[0]] for task in IR]
@@ -451,7 +615,6 @@ class CodeGen():
         while len(IR) != len(instructions_done)-1:
 
             for idx, (current, count) in enumerate(zip(current_instruction,live_time)):
-                #print(idx, current, count)
                 if current != "NOP":
                     if count <= 1:
                         instructions_done.add(current)
@@ -473,25 +636,23 @@ class CodeGen():
                 if current_instruction[assignment_id] == "NOP" and len(IR) != len(instructions_done)-1:
                     sync_code[assignment_id].append("NOP")
 
-            """ print(f'Cycle {cycle}')
-            print(instructions_done)
-            print(current_instruction)
-            print(live_time)
-            print() """
-
             cycle += 1
-            #sleep(1)
-        #pprint(sync_code)
         return  sync_code 
             
     def _generate_code(self,tasks):
-        # Generate output code for a given set of tasks
+        """
+        Generates output code for a given set of tasks.
+
+        Args:
+            tasks (list): The list of tasks.
+
+        Returns:
+            str: The generated output code.
+        """
         code = ""
         self.cycle_times['N'] = 1
-        #print("final tasks:",tasks)
         for task in tasks:
             if task:
-                #print(task)
                 for idx in range(self.cycle_times[task[0]]):
                         task_formated = str(task[:len(task)-1]).strip("()").replace("'", "") if task != "NOP" else task
                         code += (task_formated + "\n")  if idx == 0 else "\n"
@@ -499,14 +660,31 @@ class CodeGen():
         return code
 
     def _dump_code_to_file(self,code, pe_id):
-        # Dump generated code to a file for a specific PE
+        """
+        Dumps the generated code to a file for a specific PE.
+
+        Args:
+            code (str): The generated code.
+            pe_id (int): The ID of the processing element (PE).
+        """
         filename = f"{self.file_path}PE_{pe_id}_code.txt"
 
         with open(filename, "w") as file:
             file.write(code)
 
 class Simulator():
+    """
+    A class that simulates the execution of instructions in a multi-PE environment.
+    """
+
     def __init__(self, pes, file_path) -> None:
+        """
+        Initializes the Simulator.
+
+        Args:
+            pes (int): The number of processing elements (PEs).
+            file_path (str): The path to the input files.
+        """
         self.MEM = {}
         self.RG = {}
         self.pe_count = pes
@@ -516,6 +694,12 @@ class Simulator():
         self.cycle_times['NOP'] = 1
     
     def _load_files(self):
+        """
+        Loads the code from input files.
+
+        Returns:
+            list: The loaded code for each processing element.
+        """
         code = []
         for pe in range(self.pe_count):
             file_name = f'PE_{pe}_code.txt'
@@ -525,6 +709,12 @@ class Simulator():
         return code
 
     def run(self):
+        """
+        Runs the simulation.
+
+        Returns:
+            int: The total number of cycles executed.
+        """
         code = self._load_files()
         instruction_running = ["NOP"]*self.pe_count
         live_cycles = [0]*self.pe_count
@@ -546,24 +736,27 @@ class Simulator():
                     self._execute(instruction_running[pe])
             
             
-            #sleep(1)
             message = f'Cycle:{cycle},'
             message = f'{message:<12}'
             for idx,pe in enumerate(range(self.pe_count)):
                 instruction_pe = f"PE_{pe}: {', '.join(instruction_running[pe])}[{live_cycles[pe]}], "
                 column_pos = 30 
                 message += f"{instruction_pe:<{column_pos}}"
-            #message += f'\n\t\tRG:{self.RG}  \tMEM:{self.MEM}'
             print(message)
 
             #Update cycle times
             for pe in range(self.pe_count):
                 live_cycles[pe] -= 1
-
-            #print(cycle,instruction_running,live_cycles,instruction_pos)
             cycle += 1
         return cycle-1 if cycle-1 > 0 else 0
+    
     def _execute(self, instruction):
+        """
+        Executes the given instruction.
+
+        Args:
+            instruction (list): The instruction to execute.
+        """
         instruction_name = instruction[0]
         
         if instruction_name == "LOAD":
@@ -597,5 +790,3 @@ class Simulator():
         else:
             raise(ValueError(f'Unknown Instruction: {instruction}'))
         
-
-#print(load_mem("mem.txt"))
