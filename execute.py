@@ -34,7 +34,7 @@ with open(source_code_file_name, "r") as handler:
 parse_instance = Parser()
 IR,depend,indep,line_depend= parse_instance.parse(content)
 
-print("Generated IR")
+print(f"Generating IR from '{source_code_file_name}'")
 print('"""')
 pprint(IR)
 print('"""')
