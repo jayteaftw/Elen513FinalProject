@@ -133,7 +133,21 @@ Operational Latency
 ```
 Core Count: 2
 
-### Running Pasre()
+
+At the end of simulation, we should see 'y=12.5' and 'z=10.0' in the memory.
+```
+t1=10
+t2=20
+t3=t2/8 = 20/8 = 2.5
+t4=t1*t1 = 10*10 = 100
+t4=^t4 = 10
+t3 = t4+t3; = 10+2.5 = 12.5
+y = 12.5
+z = 10
+```
+
+
+### Running Parser()
 After excuting ```parse()```, 
 
 Optimized IR
@@ -255,3 +269,4 @@ Final Multi Core Memory: {'x': 10.0, 'y': 12.5, 'z': 10.0}
 Final Cycle Count: Single Core 27, Multi-Core 17. Speed Up 1.588
 Single Core and Multi Core Memory Equal. Code ran correctly!
 ```
+As we can see, both the Single and Multi core executed correctly with 'y=12.5' and 'z=10.0' while seeing a 1.588 theoretical speedup when using parallelism.
