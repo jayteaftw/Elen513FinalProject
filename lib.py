@@ -8,8 +8,8 @@ import os
 
 input_folder = "input/"
 output_folder = "output/"
-single_core_code_path="single_core_code/"
-multi_core_code_path="multi_core_code/"
+single_core_code_path=output_folder+"single_core_code/"
+multi_core_code_path=output_folder+"multi_core_code/"
 
 for folder_path in [input_folder,output_folder,single_core_code_path,multi_core_code_path]:
     if not (os.path.exists(folder_path) and os.path.isdir(folder_path)):
@@ -151,8 +151,6 @@ class Parser():
 
         return new_partial_IR
 
-
-
     def _dead_code_removal(self, IR, write_depend, instructions):
         
         instructions_keep = set()
@@ -267,6 +265,7 @@ class Parser():
         return instructions
 
     def _dfg(self,instructions,edges):
+        self.dot = Digraph()
         file_contents = ""
         for idx, instr in enumerate(instructions):
             self.dot.node(str(idx), str(idx)+": "+str(instr))
@@ -288,6 +287,8 @@ class Parser():
 
         #Tokenize instruction set
         tokenized_list = self._gen_tokenized_list(instructions)
+        
+        print(tokenized_list)
 
         #Generates IR without dependency list
         IR_partial = self._gen_IR(tokenized_list)
@@ -300,14 +301,17 @@ class Parser():
         #Remove Duplicate code
         IR, writes, depend, edges, write_depend = self._gen_dependencies(self._remove_duplicate_code(IR))
 
+        pprint(IR)
+
 
         #Handles WAW and insutrctions that have no dependecies
         instructions, IR_partial = self._dead_code_removal(IR, write_depend, instructions)
 
+        print(IR_partial)
+
         #Regenerate New IR with update instruction list
         IR, writes, depend, edges, write_depend = self._gen_dependencies(IR_partial)
         
-
 
         #Constant Folding then Propgation Loop. 
         #Evaluates constant expressions and Replaces variables with constants.
@@ -340,10 +344,10 @@ class CodeGen():
     def generate_compiled_code(self,IR):
         
         # Step 1: Assign initial tasks to PEs
-        assignments = self.initial_assignment(IR)
+        assignments = self._initial_assignment(IR)
         
         #Step 2:
-        execution_times = self.calculate_execution_times(assignments)
+        execution_times = self._calculate_execution_times(assignments)
 
         # Step 3: Check workload imbalance
         max_execution_time = max(execution_times)
@@ -358,10 +362,10 @@ class CodeGen():
             
             iteration += 1 
             # Step 4: Task migration or swapping strategy
-            new_assignments = self.rebalance_workload(assignments, execution_times)
+            new_assignments = self._rebalance_workload(assignments, execution_times)
 
             # Step 5: Calculate execution cost for each PE
-            execution_times = self.calculate_execution_times(new_assignments)
+            execution_times = self._calculate_execution_times(new_assignments)
 
             # Step 6: Check workload imbalance
             max_execution_time = max(execution_times)
@@ -377,15 +381,15 @@ class CodeGen():
             assignments = new_assignments
             
         #Step 7
-        synced_tasks = self.sync(assignments, IR)
+        synced_tasks = self._sync(assignments, IR)
         for pe_id, assigned_tasks in enumerate(synced_tasks):
             # Step 8: Generate output code for each PE
-            code = self.generate_code(assigned_tasks)
+            code = self._generate_code(assigned_tasks)
 
             # Step 9: Dump output code to files
-            self.dump_code_to_file(code, pe_id)
+            self._dump_code_to_file(code, pe_id)
 
-    def initial_assignment(self,tasks):
+    def _initial_assignment(self,tasks):
         # Assign initial tasks to PEs
         
         assignments = [[] for _ in range(self.num_PEs)]
@@ -399,7 +403,7 @@ class CodeGen():
         
         return assignments
 
-    def calculate_execution_times(self,assignments):
+    def _calculate_execution_times(self,assignments):
         # Calculate execution time for each PE
         execution_times = []
 
@@ -414,7 +418,7 @@ class CodeGen():
 
         return execution_times
 
-    def rebalance_workload(self,assignments, execution_times):
+    def _rebalance_workload(self,assignments, execution_times):
 
         new_assignments = copy.deepcopy(assignments)
         
@@ -428,7 +432,7 @@ class CodeGen():
 
         return new_assignments
 
-    def sync(self,assignments, IR):
+    def _sync(self,assignments, IR):
 
         sync_code = [[] for _ in range(len(assignments))]
         hash = {}
@@ -480,7 +484,7 @@ class CodeGen():
         #pprint(sync_code)
         return  sync_code 
             
-    def generate_code(self,tasks):
+    def _generate_code(self,tasks):
         # Generate output code for a given set of tasks
         code = ""
         self.cycle_times['N'] = 1
@@ -494,7 +498,7 @@ class CodeGen():
 
         return code
 
-    def dump_code_to_file(self,code, pe_id):
+    def _dump_code_to_file(self,code, pe_id):
         # Dump generated code to a file for a specific PE
         filename = f"{self.file_path}PE_{pe_id}_code.txt"
 
@@ -511,7 +515,7 @@ class Simulator():
             self.cycle_times = json.load(f)
         self.cycle_times['NOP'] = 1
     
-    def load_files(self):
+    def _load_files(self):
         code = []
         for pe in range(self.pe_count):
             file_name = f'PE_{pe}_code.txt'
@@ -521,7 +525,7 @@ class Simulator():
         return code
 
     def run(self):
-        code = self.load_files()
+        code = self._load_files()
         instruction_running = ["NOP"]*self.pe_count
         live_cycles = [0]*self.pe_count
         instruction_pos = [0]*self.pe_count
@@ -539,14 +543,16 @@ class Simulator():
                     instruction_running[pe] = code[pe][pos]
                     live_cycles[pe] = self.cycle_times[instruction_running[pe][0]]
                     instruction_pos[pe] += 1
-                    self.execute(instruction_running[pe])
+                    self._execute(instruction_running[pe])
             
             
             #sleep(1)
-            message = ""
-            message += f'Cycle:{cycle},'
-            for pe in range(self.pe_count):
-                message += f"\tPE_{pe}: {', '.join(instruction_running[pe])}[{live_cycles[pe]}], "
+            message = f'Cycle:{cycle},'
+            message = f'{message:<12}'
+            for idx,pe in enumerate(range(self.pe_count)):
+                instruction_pe = f"PE_{pe}: {', '.join(instruction_running[pe])}[{live_cycles[pe]}], "
+                column_pos = 30 
+                message += f"{instruction_pe:<{column_pos}}"
             #message += f'\n\t\tRG:{self.RG}  \tMEM:{self.MEM}'
             print(message)
 
@@ -557,7 +563,7 @@ class Simulator():
             #print(cycle,instruction_running,live_cycles,instruction_pos)
             cycle += 1
         return cycle-1 if cycle-1 > 0 else 0
-    def execute(self, instruction):
+    def _execute(self, instruction):
         instruction_name = instruction[0]
         
         if instruction_name == "LOAD":
