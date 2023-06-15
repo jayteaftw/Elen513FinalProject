@@ -132,7 +132,8 @@ class Parser():
 
     def _gen_partial_IR(self, tokenized_list):
         """
-        Generates a partial Intermediate Representation (IR) from a tokenized list.
+        Generates a partial Intermediate Representation (IR) from a tokenized list, 
+        and checks to see if all registers are proper.
 
         Args:
             tokenized_list (list): Tokenized list.
@@ -154,6 +155,22 @@ class Parser():
             elif "STORE" in tokens:
                 IR.append(("STORE",tokens[2],tokens[4]))
         
+        def register_checking(token,registers):
+            for reg in registers:
+                if not is_number(reg) and reg[0] != "t":
+                    raise(ValueError(f"{reg} is not a proper register in instruction {token}. All register start with 't' such as 't8'."))
+
+        for token in IR:
+            if token[0] in ["LOAD"]:
+                register_checking(token,token[1])
+            elif token[0] in ["STORE"]:
+                register_checking(token,token[2])
+            elif token[0] in self.operator_map:
+                print(token,token[1:4] )
+                register_checking(token,token[1:4])
+            elif token[0] in ['SQRT', 'EQ']:
+                register_checking(token,token[1:3])
+            
         return IR 
 
     def _gen_dependencies(self,IR):
